@@ -51,47 +51,6 @@ function setup() {
 add_action('after_setup_theme', __NAMESPACE__ . '\\setup');
 
 /**
- * Register sidebars
- */
-function widgets_init() {
-  register_sidebar([
-    'name'          => __('Primary', 'sage'),
-    'id'            => 'sidebar-primary',
-    'before_widget' => '<section class="widget %1$s %2$s">',
-    'after_widget'  => '</section>',
-    'before_title'  => '<h3>',
-    'after_title'   => '</h3>'
-  ]);
-
-  register_sidebar([
-    'name'          => __('Footer', 'sage'),
-    'id'            => 'sidebar-footer',
-    'before_widget' => '<section class="widget %1$s %2$s">',
-    'after_widget'  => '</section>',
-    'before_title'  => '<h3>',
-    'after_title'   => '</h3>'
-  ]);
-}
-add_action('widgets_init', __NAMESPACE__ . '\\widgets_init');
-
-/**
- * Determine which pages should NOT display the sidebar
- */
-function display_sidebar() {
-  static $display;
-
-  isset($display) || $display = !in_array(true, [
-    // The sidebar will NOT be displayed if ANY of the following return true.
-    // @link https://codex.wordpress.org/Conditional_Tags
-    is_404(),
-    is_front_page(),
-    is_page_template('template-custom.php'),
-  ]);
-
-  return apply_filters('sage/display_sidebar', $display);
-}
-
-/**
  * Theme assets
  */
 function assets() {
@@ -104,3 +63,88 @@ function assets() {
   wp_enqueue_script('sage/js', Assets\asset_path('scripts/main.js'), ['jquery'], null, true);
 }
 add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\assets', 100);
+
+/**
+ * Enable svg uploads
+ * https://www.leighton.com/blog/enable-upload-of-svg-to-wordpress-media-library/
+ */
+function enable_svg_upload( $m ){
+  $m['svg']  = 'image/svg+xml';
+  $m['svgz'] = 'image/svg+xml';
+  return $m;
+}
+add_filter( 'upload_mimes',  __NAMESPACE__ . '\\enable_svg_upload');
+
+/**
+ * Remove emoji support
+ */
+function remove_emojis() {
+
+  // all actions related to emojis
+  remove_action( 'admin_print_styles', 'print_emoji_styles' );
+  remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+  remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+  remove_action( 'wp_print_styles', 'print_emoji_styles' );
+  remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+  remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+  remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+
+  // filter to remove TinyMCE emojis
+  add_filter( 'tiny_mce_plugins',  __NAMESPACE__ . '\\disable_emojis_tinymce' );
+}
+add_action( 'init',  __NAMESPACE__ . '\\remove_emojis');
+
+function disable_emojis_tinymce( $plugins ) {
+  if ( is_array( $plugins ) ) {
+    return array_diff( $plugins, array( 'wpemoji' ) );
+  } else {
+    return array();
+  }
+}
+
+/**
+ * Remove meta-name-"generator" tag
+ */
+remove_action('wp_head',  __NAMESPACE__ . '\\wp_generator');
+
+
+/**
+ * Remove dns prefetch
+ */
+add_filter( 'emoji_svg_url', '__return_false' );
+
+/**
+ * Removes jquery from the frontend
+ */
+function remove_core_jquery() {
+  wp_deregister_script( 'jquery' );
+  // Change the URL if you want to load a local copy of jQuery from your own server.
+  //wp_register_script( 'jquery', "https://code.jquery.com/jquery-3.1.1.min.js", array(), '3.1.1' );
+}
+add_action( 'wp_enqueue_scripts',  __NAMESPACE__ . '\\remove_core_jquery' );
+
+/**
+ * Remove wp api tags
+ */
+remove_action( 'wp_head', 'rest_output_link_wp_head');
+remove_action( 'wp_head', 'wp_oembed_add_discovery_links');
+remove_action( 'template_redirect', 'rest_output_link_header', 11, 0 );
+
+/**
+ * Remove linkUri tag
+ */
+remove_action ('wp_head', 'rsd_link');
+remove_action ('wp_head', 'rsd_link');
+
+/**
+ * Remove wlw tag
+ */
+remove_action( 'wp_head', 'wlwmanifest_link');
+
+/**
+ * Remove wp-embed by default
+ */
+function remove_wpembed(){
+  wp_deregister_script( 'wp-embed' );
+}
+add_action( 'wp_footer',  __NAMESPACE__ . '\\remove_wpembed' );

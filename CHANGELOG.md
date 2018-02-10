@@ -1,3 +1,8 @@
+
+* Added whitelabelling functions
+* Added utility functions(getVar, responsive_image)
+* Removed sidebar support
+
 ### 8.5.3: August 18th, 2017
 * Popper.js now properly supports Bower ([#1953](https://github.com/roots/sage/pull/1953))
 

@@ -15,11 +15,6 @@ function body_class($classes) {
     }
   }
 
-  // Add class if sidebar is active
-  if (Setup\display_sidebar()) {
-    $classes[] = 'sidebar-primary';
-  }
-
   return $classes;
 }
 add_filter('body_class', __NAMESPACE__ . '\\body_class');
