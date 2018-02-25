@@ -1,7 +1,8 @@
-
+### 8.5.4
 * Added whitelabelling functions
 * Added utility functions(getVar, responsive_image)
 * Removed sidebar support
+* Reworked entire gulp system. Now it has default, watch and ftp. Removed unnecessary dependencies
 
 ### 8.5.3: August 18th, 2017
 * Popper.js now properly supports Bower ([#1953](https://github.com/roots/sage/pull/1953))

@@ -93,7 +93,7 @@ function remove_emojis() {
   add_filter( 'tiny_mce_plugins',  __NAMESPACE__ . '\\disable_emojis_tinymce' );
 }
 add_action( 'init',  __NAMESPACE__ . '\\remove_emojis');
-
+// Also remove emojis from tinymce
 function disable_emojis_tinymce( $plugins ) {
   if ( is_array( $plugins ) ) {
     return array_diff( $plugins, array( 'wpemoji' ) );
