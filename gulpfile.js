@@ -10,9 +10,17 @@ var sass         = require('gulp-sass');
 var uglify       = require('gulp-uglify');
 var browserSync  = require('browser-sync').create();
 var colors       = require('colors/safe');
-var ftp          = require('vinyl-ftp');
+var sftp         = require('gulp-sftp');
 var debug        = require('gulp-debug');
 var packageJson  = require('./package');
+var concat       = require('gulp-concat');
+var log          = require('fancy-log');
+var fs           = require('fs');
+var config = {};
+if(fs.existsSync('./config.json')) {
+	config       = require('./config.json');
+}
+
 
 // Error checking; produce an error rather than crashing.
 var onError = function(err) {
@@ -35,9 +43,11 @@ print('3: gulp ftp [Uploads frontend files to a external server');
 print('');
 print('Available params:');
 print('1: --production [Minifies js and css]')
+print('2: --all [Use with gulp ftp. Uploads all files on the server instead of just the dist folder]')
 
 var opts = {
-	production : argv.production || false
+	production : argv.production || false,
+	all        : argv.all        || false
 };
 
 
@@ -50,6 +60,7 @@ var manifest = {
 		{
 			output : 'main.js',
 			files  : [
+				//'node_modules/photoswipe/dist/photoswipe.min.js',
 				'assets/scripts/main.js'
 			]
 		}
@@ -64,7 +75,7 @@ var manifest = {
 	],
 
   config : {
-    devUrl : "http://localhost/wordpress"
+    devUrl : "http://localhost/testbed"
   },
   dist : "dist/"
 }
@@ -102,7 +113,7 @@ gulp.task('scripts', function() {
 				uglify()
 			))
 			.pipe(gulp.dest(manifest.dist + 'scripts'))
-			.pipe(browserSync.reload({stream:false}))
+			.pipe(browserSync.reload({stream:true}))
 	});
 });
 
@@ -110,7 +121,7 @@ gulp.task('images', function() {
 	gulp.src('assets/images/**/*')
 		.pipe(plumber())
 		.pipe(gulp.dest(manifest.dist + 'images'))
-		.pipe(browserSync.reload({stream:false}))
+		.pipe(browserSync.reload({stream:true}))
 });
 
 gulp.task('fonts', function() {
@@ -121,32 +132,54 @@ gulp.task('fonts', function() {
 });
 
 gulp.task('ftp', function() {
-	var conn = ftp.create( {
-		host:     'mywebsite.tld',
-		user:     'me',
-		password: 'mypass',
-		parallel: 10,
-		//log:      gutil.log
-	} );
 
-	var globs = [
-		'dist/**',
-		'lib/**',
-		'template?'
-	];
-
+	// Change this to your wp themes folder
+	var base = '/srv/users/wordpress';
+	var conn = sftp({
+		host       : config.host,
+		user       : config.user,
+		pass       : config.pass,
+		port       : 22,
+		remotePath : base
+	});
+	if(opts.all) {
+		// This should work well out of the box but feel free to modify this list
+		var globs = [
+			'author.php',
+			'404.php',
+			'base.php',
+			'category.php',
+			'functions.php',
+			'index.php',
+			'page.php',
+			'screenshot.png',
+			'search.php',
+			'single.php',
+			'style.css',
+			'acf-json/**',
+			'vendor/**',
+			'dist/**',
+			'lib/**',
+			'template*',
+			'templates/**'
+		];
+	} else {
+		var globs = [
+			'dist/**'
+		]
+	}
 	// using base = '.' will transfer everything to /public_html correctly
 	// turn off buffering in gulp.src for best performance
 
 	return gulp.src( globs, { base: '.', buffer: false } )
-		.pipe( conn.newer( '/public_html' ) ) // only upload newer files
-		.pipe( conn.dest( '/public_html' ) );
+		.pipe(conn)
 });
 
 
 
 gulp.task('watch', function() {
 	browserSync.init({
+		files: ['{lib,templates}/**/*.php', '*.php'],
 		proxy: manifest.config.devUrl,
 		snippetOptions: {
 			whitelist: ['/wp-admin/admin-ajax.php'],

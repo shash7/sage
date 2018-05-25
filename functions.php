@@ -16,7 +16,8 @@ $sage_includes = [
   'lib/titles.php',     // Page titles
   'lib/wrapper.php',    // Theme wrapper class
   'lib/customizer.php', // Theme customizer
-  'lib/whitelabel.php'  // Whitelabel admin area
+  'lib/whitelabel.php', // Whitelabel admin area
+  'lib/cpt/articles.php'// Sample CPT, commented out for now
 ];
 
 foreach ($sage_includes as $file) {
